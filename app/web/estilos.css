@@ -1,0 +1,39 @@
+/* Estacion UTHH · estilos (no son parte de la base de datos) */
+:root { --fondo:#F3F6F9; --papel:#FFFFFF; --tinta:#12212E; --suave:#556574; --linea:#D6E0E8;
+  --azul:#1B5E8C; --azul2:#E4F0F8; --naranja:#B5560F; --naranja2:#FCEBDD; --rojo:#B3261E; --rojo2:#FCE9E7; }
+@media (prefers-color-scheme: dark) {
+  :root { --fondo:#0C141B; --papel:#142029; --tinta:#E3EDF5; --suave:#9AAEBF; --linea:#263846;
+    --azul:#6CB8EC; --azul2:#16293A; --naranja:#F2A55E; --naranja2:#3A2814; --rojo:#FF8A80; --rojo2:#3A1D1B; color-scheme: dark; }
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--fondo); color: var(--tinta); font: 15px/1.5 system-ui, "Segoe UI", Roboto, sans-serif; }
+header { background: #1B5E8C; color: #fff; }
+header nav { max-width: 1100px; margin: 0 auto; padding: 10px 16px; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+header a { color: #fff; text-decoration: none; padding: 6px 10px; border-radius: 8px; font-weight: 600; }
+header a[aria-current], header a:hover { background: rgba(255,255,255,.18); }
+header b { margin-right: 12px; }
+#estado { margin-left: auto; font-size: .85rem; }
+main { max-width: 1100px; margin: 0 auto; padding: 20px 16px 48px; display: grid; gap: 16px; }
+h1, h2, h3 { margin: 0; line-height: 1.2; }
+p { margin: 0; }
+.nota { color: var(--suave); font-size: .9rem; }
+.tarjeta { background: var(--papel); border: 1px solid var(--linea); border-radius: 12px; padding: 16px; display: grid; gap: 10px; min-width: 0; }
+.rejilla { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.sensor .temp { font-size: 2.8rem; font-weight: 800; line-height: 1; }
+.sensor.alerta { border-color: var(--naranja); box-shadow: inset 4px 0 0 var(--naranja); }
+.chip { display: inline-block; font-size: .75rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--azul2); color: var(--azul); }
+.chip.alerta { background: var(--naranja2); color: var(--naranja); }
+.aviso { border-radius: 8px; padding: 10px 12px; border-left: 4px solid var(--azul); background: var(--azul2); }
+.aviso.error { border-color: var(--rojo); background: var(--rojo2); }
+label { display: grid; gap: 4px; font-size: .85rem; font-weight: 600; color: var(--suave); }
+input, select, button { font: inherit; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--linea); background: var(--fondo); color: var(--tinta); }
+button { background: var(--azul); color: #fff; border: 0; font-weight: 700; cursor: pointer; }
+.campos { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.tabla { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--linea); }
+th { font-size: .75rem; text-transform: uppercase; color: var(--suave); }
+pre { background: #0E1B26; color: #D8EAF7; padding: 10px 12px; border-radius: 8px; font-size: .8rem; overflow-x: auto; margin: 0; }
+summary { cursor: pointer; font-weight: 600; color: var(--azul); }
+svg text { font: 12px system-ui, sans-serif; fill: var(--suave); }

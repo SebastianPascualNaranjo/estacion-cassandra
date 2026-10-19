@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tablero · Estacion UTHH</title>
+<link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+<main>
+  <h1>Estacion meteorologica UTHH</h1>
+  <p class="nota">Se actualiza cada 2 segundos leyendo las tablas <b>sensores</b>, <b>ultima_lectura</b>, <b>conteo_por_dia</b> y <b>alertas_por_dia</b>.</p>
+  <div id="aviso"></div>
+  <section class="rejilla" id="sensores"></section>
+  <div class="rejilla">
+    <section class="tarjeta">
+      <h2>Alertas de hoy</h2>
+      <div class="tabla"><table>
+        <thead><tr><th>Hora</th><th>Sensor</th><th>Temp.</th></tr></thead>
+        <tbody id="alertas"></tbody>
+      </table></div>
+    </section>
+    <section class="tarjeta" style="justify-items:center;text-align:center">
+      <h2>Registra una lectura desde tu celular</h2>
+      <div id="qr" style="background:#fff;padding:8px;border-radius:8px;line-height:0"></div>
+      <p class="nota">El puerto 3000 debe estar en Public.</p>
+    </section>
+  </div>
+  <div id="cql"></div>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script src="app.js"></script>
+<script>
+menu("index.html");
+
+async function cargar() {
+  try {
+    const r = await api("/sensores");                 // GET /api/sensores
+    const a = await api("/alertas?dia=" + r.hoy);     // GET /api/alertas?dia=AAAA-MM-DD
+
+    // Una tarjeta por sensor
+    const cont = document.getElementById("sensores");
+    cont.textContent = "";
+    if (!r.sensores.length) aviso(cont, "No hay sensores: insertalos en la tabla estacion.sensores.");
+    for (const s of r.sensores) {
+      const alto = s.ultima && s.ultima.temperatura > s.temp_max;
+      const t = el("a", "tarjeta sensor" + (alto ? " alerta" : ""));
+      t.href = "sensor.html?id=" + s.id;
+      t.style.color = "inherit"; t.style.textDecoration = "none";
+      t.append(el("h3", null, s.nombre), el("p", "nota", s.ubicacion + " · " + s.id),
+        el("div", "temp", s.ultima ? num(s.ultima.temperatura) + " °C" : "—"),
+        el("p", null, "Humedad " + (s.ultima ? s.ultima.humedad + " %" : "—") + " · umbral " + s.temp_max + " °C"),
+        el("p", "nota", (s.ultima ? "Ultima lectura " + hace(s.ultima.hora) : "Sin lecturas") + " · " + s.lecturasHoy + " lecturas hoy"));
+      if (alto) t.append(el("span", "chip alerta", "Sobre el umbral"));
+      cont.append(t);
+    }
+
+    // Alertas del dia (las 10 mas recientes)
+    const tb = document.getElementById("alertas");
+    tb.textContent = "";
+    for (const x of a.alertas.slice(0, 10)) {
+      const tr = el("tr");
+      tr.append(el("td", null, horaLocal(x.hora)), el("td", null, x.sensor), el("td", null, num(x.temperatura) + " °C"));
+      tb.append(tr);
+    }
+    if (!a.alertas.length) tb.innerHTML = '<tr><td colspan="3" class="nota">Sin alertas hoy</td></tr>';
+
+    verCql(document.getElementById("cql"), r.cql.concat(a.cql));
+    aviso(document.getElementById("aviso"), "");
+  } catch (e) {
+    aviso(document.getElementById("aviso"), e.message, "error");
+  }
+}
+
+// Codigo QR que lleva a la pagina para registrar lecturas
+try {
+  const q = qrcode(0, "M");
+  q.addData(location.origin + "/registrar.html");
+  q.make();
+  document.getElementById("qr").innerHTML = q.createSvgTag(5, 2);
+} catch (e) { /* sin internet no se dibuja el QR */ }
+
+cargar();
+setInterval(cargar, 2000);
+</script>
+</body>
+</html>

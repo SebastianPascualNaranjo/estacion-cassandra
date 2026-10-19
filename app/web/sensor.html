@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sensor · Estacion UTHH</title>
+<link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+<main>
+  <h1>Lecturas de un sensor</h1>
+  <p class="nota">Lee <b>una sola particion</b> de <b>lecturas_por_sensor_dia</b>: la del sensor y el dia elegidos.</p>
+  <form class="tarjeta campos" id="filtro">
+    <label>Sensor <select id="sensor"></select></label>
+    <label>Dia <input id="dia" type="date"></label>
+    <label>LIMIT <select id="limite"><option>100</option><option selected>1000</option><option>5000</option></select></label>
+  </form>
+  <div id="aviso"></div>
+  <section class="tarjeta">
+    <h2 id="resumen">Temperatura (naranja) y humedad (azul)</h2>
+    <div id="grafica"></div>
+  </section>
+  <section class="tarjeta">
+    <h2>Ultimas 10 lecturas</h2>
+    <div class="tabla"><table>
+      <thead><tr><th>Hora</th><th>Temperatura</th><th>Humedad</th></tr></thead>
+      <tbody id="tabla"></tbody>
+    </table></div>
+  </section>
+  <div id="cql"></div>
+</main>
+<script src="app.js"></script>
+<script>
+menu("sensor.html");
+const parametros = new URLSearchParams(location.search);
+const $sensor = document.getElementById("sensor"), $dia = document.getElementById("dia"), $limite = document.getElementById("limite");
+$dia.value = hoyLocal();
+
+async function iniciar() {
+  const r = await api("/sensores");
+  for (const s of r.sensores) {
+    const o = el("option", null, s.nombre + " (" + s.id + ")");
+    o.value = s.id;
+    $sensor.append(o);
+  }
+  if (parametros.get("id")) $sensor.value = parametros.get("id");
+  cargar();
+}
+
+async function cargar() {
+  if (!$sensor.value) return;
+  try {
+    // GET /api/sensores/uthh-01/lecturas?dia=AAAA-MM-DD&limite=1000
+    const r = await api("/sensores/" + $sensor.value + "/lecturas?dia=" + $dia.value + "&limite=" + $limite.value);
+    grafica(document.getElementById("grafica"), r.lecturas);
+    const temps = r.lecturas.map(l => l.temperatura);
+    document.getElementById("resumen").textContent = r.lecturas.length + " lecturas" +
+      (temps.length ? " · minima " + num(Math.min(...temps)) + " °C · maxima " + num(Math.max(...temps)) + " °C" : "");
+    const tb = document.getElementById("tabla");
+    tb.textContent = "";
+    for (const l of r.lecturas.slice(0, 10)) {
+      const tr = el("tr");
+      tr.append(el("td", null, horaLocal(l.hora)), el("td", null, num(l.temperatura) + " °C"), el("td", null, l.humedad + " %"));
+      tb.append(tr);
+    }
+    verCql(document.getElementById("cql"), r.cql);
+    aviso(document.getElementById("aviso"), "");
+  } catch (e) {
+    aviso(document.getElementById("aviso"), e.message, "error");
+  }
+}
+
+document.getElementById("filtro").addEventListener("change", cargar);
+setInterval(() => { if ($dia.value === hoyLocal()) cargar(); }, 5000); // si es hoy, se actualiza sola
+iniciar().catch(e => aviso(document.getElementById("aviso"), e.message, "error"));
+</script>
+</body>
+</html>

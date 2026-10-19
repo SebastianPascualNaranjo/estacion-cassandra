@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Registrar · Estacion UTHH</title>
+<link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+<main style="max-width:640px">
+  <h1>Registrar una lectura</h1>
+  <p class="nota">Eres un sensor manual: envia una lectura y mira en cuantas tablas se guarda.</p>
+  <form class="tarjeta" id="form">
+    <label>Sensor <select id="sensor"></select></label>
+    <div class="campos">
+      <label>Temperatura (°C) <input id="temperatura" type="number" step="0.1" value="27.5" inputmode="decimal"></label>
+      <label>Humedad (%) <input id="humedad" type="number" step="1" value="70" inputmode="numeric"></label>
+    </div>
+    <button type="submit">Guardar lectura</button>
+  </form>
+  <div id="aviso"></div>
+  <section class="tarjeta" id="resultado" hidden>
+    <h2>Asi se guardo en Cassandra</h2>
+    <p class="nota">Una lectura se escribe en varias tablas, cada una pensada para una consulta. Las inserciones van juntas en un BATCH; el contador va aparte.</p>
+    <pre id="cql"></pre>
+  </section>
+</main>
+<script src="app.js"></script>
+<script>
+menu("registrar.html");
+
+api("/sensores").then(r => {
+  for (const s of r.sensores) {
+    const o = el("option", null, s.nombre + " · umbral " + s.temp_max + " °C");
+    o.value = s.id;
+    document.getElementById("sensor").append(o);
+  }
+}).catch(e => aviso(document.getElementById("aviso"), e.message, "error"));
+
+document.getElementById("form").addEventListener("submit", async evento => {
+  evento.preventDefault(); // no recargar la pagina
+  try {
+    // POST /api/lecturas con la lectura en JSON
+    const r = await api("/lecturas", "POST", {
+      sensor: document.getElementById("sensor").value,
+      temperatura: Number(document.getElementById("temperatura").value),
+      humedad: Number(document.getElementById("humedad").value),
+    });
+    aviso(document.getElementById("aviso"), r.alerta
+      ? "Guardada. Supera el umbral: tambien se registro una ALERTA."
+      : "Guardada en la particion (" + r.sensor + ", " + r.dia + ").");
+    document.getElementById("cql").textContent = r.cql.join("\n");
+    document.getElementById("resultado").hidden = false;
+  } catch (e) {
+    aviso(document.getElementById("aviso"), e.message, "error");
+  }
+});
+</script>
+</body>
+</html>
